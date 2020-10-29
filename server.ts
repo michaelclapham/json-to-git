@@ -2,6 +2,7 @@ import express from "express";
 import yargs from "yargs";
 import * as bodyParser from "body-parser";
 import { GitRepo } from "./git-repo";
+import * as path from "path";
 
 require('dotenv').config();
 
@@ -13,8 +14,10 @@ const argv = yargs(process.argv.slice(2)).options({
 
 const app = express();
 
+app.use(bodyParser.json());
+
 let router = express.Router();
-const gitRepo = new GitRepo("../repo", argv.cloneUrl);
+const gitRepo = new GitRepo(path.join(__dirname, "../repo"), argv.cloneUrl);
 gitRepo.init();
 
 router.post("/commit/:branch/*", async (req, res) => {
@@ -23,7 +26,8 @@ router.post("/commit/:branch/*", async (req, res) => {
     outputString += "\n" + filePathAfterBranch;
     let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
     try {
-        let output = gitRepo.writeAndCommit(filePathAfterBranch, req.body, commitMsg);
+        gitRepo.gitCheckoutRemote(req.params.branch);
+        let output = gitRepo.writeAndCommit(filePathAfterBranch, JSON.stringify(req.body), commitMsg);
         res.send(output);
     } catch (ex) {
         res.write("Error " + ex);

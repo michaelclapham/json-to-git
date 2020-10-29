@@ -24,10 +24,19 @@ export class GitRepo {
     }
 
     private runGit(params: string[]) {
+        process.chdir(this.repoPath);
+        console.log("Changed directory to ", this.repoPath);
         console.log("Running git command: git " + params.join(" "));
-        let buffer = execSync('git ' + params.join(" "));
-        const outputString = buffer.toString();
-        return outputString;
+        try {
+            let buffer = execSync('git ' + params.join(" "));
+            const outputString = buffer.toString();
+            return outputString;
+        } catch (ex) {
+            return "" + ex;
+        }
+        process.chdir(__dirname);
+        console.log("Changed directory to ", __dirname);
+
     }
 
     public clone() {
@@ -43,13 +52,26 @@ export class GitRepo {
         return this.runGit(["commit", "-m", '"' + msg.replace("\"", " ") + '"']);
     }
 
+    public log() {
+        return this.runGit(["log"]);
+    }
+
+    public push() {
+        return this.runGit(["push"]);
+    }
+
+    public gitCheckoutRemote(branchName: string) {
+        let safeBranchName = branchName.replace(" ", "").replace("&","").replace(";","");
+        return this.runGit(["checkout", "--track", "origin/" + safeBranchName]);
+    }
+
     public writeAndCommit(filepath: string, data: string, commitMsg: string) {
-        let outputPath = path.join(this.baseDir, this.repoPath, filepath);
+        let outputPath = path.join(this.repoPath, filepath);
         let output = "";
         console.log("Writing to path ", outputPath);
         fs.writeFileSync(outputPath, data);
         output += this.add(".");
-        output += this.commit(commitMsg);
+        output += this.commit(commitMsg); 
         return output;
     }
 
