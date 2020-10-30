@@ -1,5 +1,5 @@
 import express from "express";
-import yargs from "yargs";
+import yargs, { env } from "yargs";
 import * as bodyParser from "body-parser";
 import { GitRepo } from "./git-repo";
 import * as path from "path";
@@ -21,15 +21,21 @@ const gitRepo = new GitRepo(path.join(__dirname, "../repo"), argv.cloneUrl);
 gitRepo.init();
 
 router.post("/commit/:branch/*", async (req, res) => {
-    let filePathAfterBranch = req.path.slice(req.path.indexOf(req.params.branch) + req.params.branch.length);
-    let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
-    try {
-        let output = gitRepo.writeAndCommit(req.params.branch, filePathAfterBranch, JSON.stringify(req.body, null, 4), commitMsg);
-        output += gitRepo.push(req.params.branch);
-        res.send(output);
-    } catch (ex) {
-        res.write("Error " + ex);
-        res.status(500);
+    if (req.headers.authorization === process.env.AUTH_SECRET) {
+        let filePathAfterBranch = req.path.slice(req.path.indexOf(req.params.branch) + req.params.branch.length);
+        let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
+        try {
+            let output = gitRepo.writeAndCommit(req.params.branch, filePathAfterBranch, JSON.stringify(req.body, null, 4), commitMsg);
+            output += gitRepo.push(req.params.branch);
+            res.send(output);
+        } catch (ex) {
+            res.write("Error " + ex);
+            res.status(500);
+            res.end();
+        }
+    } else {
+        res.write("Not authorised");
+        res.status(401);
         res.end();
     }
 });
