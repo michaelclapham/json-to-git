@@ -21,6 +21,7 @@ const gitRepo = new GitRepo(path.join(__dirname, "../repo"), argv.cloneUrl);
 gitRepo.init();
 
 router.post("/commit/:branch/*", async (req, res) => {
+    res.contentType("text/plain");
     if (req.headers.authorization === process.env.AUTH_SECRET) {
         let filePathAfterBranch = req.path.slice(req.path.indexOf(req.params.branch) + req.params.branch.length);
         let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
