@@ -25,6 +25,10 @@ router.post("/commit/:branch/*", async (req, res) => {
     if (req.headers.authorization === process.env.AUTH_SECRET) {
         let filePathAfterBranch = req.path.slice(req.path.indexOf(req.params.branch) + req.params.branch.length);
         let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
+        console.log("File path ", filePathAfterBranch);
+        console.log("Commit msg", commitMsg);
+        console.log("Branch", req.params.branch);
+        console.log(JSON.stringify(req.body, null, 4));
         try {
             let output = gitRepo.writeAndCommit(req.params.branch, filePathAfterBranch, JSON.stringify(req.body, null, 4), commitMsg);
             output += gitRepo.push(req.params.branch);
