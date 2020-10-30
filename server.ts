@@ -21,13 +21,11 @@ const gitRepo = new GitRepo(path.join(__dirname, "../repo"), argv.cloneUrl);
 gitRepo.init();
 
 router.post("/commit/:branch/*", async (req, res) => {
-    let outputString = `LOOK MAH I STRIGYIFIED IT. Branch: ${req.params.branch}` + JSON.stringify(req.body);
     let filePathAfterBranch = req.path.slice(req.path.indexOf(req.params.branch) + req.params.branch.length);
-    outputString += "\n" + filePathAfterBranch;
     let commitMsg = "Content update. " + (req.query.commitMsg ? req.query.commitMsg : "");
     try {
-        gitRepo.gitCheckoutRemote(req.params.branch);
-        let output = gitRepo.writeAndCommit(filePathAfterBranch, JSON.stringify(req.body), commitMsg);
+        let output = gitRepo.writeAndCommit(req.params.branch, filePathAfterBranch, JSON.stringify(req.body, null, 4), commitMsg);
+        output += gitRepo.push(req.params.branch);
         res.send(output);
     } catch (ex) {
         res.write("Error " + ex);

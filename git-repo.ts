@@ -26,9 +26,9 @@ export class GitRepo {
     private runGit(params: string[]) {
         process.chdir(this.repoPath);
         console.log("Changed directory to ", this.repoPath);
-        console.log("Running git command: git " + params.join(" "));
+        console.log("Running git command: git " + params.join(" ").replace("&", ""));
         try {
-            let buffer = execSync('git ' + params.join(" "));
+            let buffer = execSync('git ' + params.join(" ").replace("&", ""));
             const outputString = buffer.toString();
             return outputString;
         } catch (ex) {
@@ -56,20 +56,30 @@ export class GitRepo {
         return this.runGit(["log"]);
     }
 
-    public push() {
-        return this.runGit(["push"]);
+    public push(remoteBranch: string) {
+        return this.runGit(["push", "--set-upstream", "origin", remoteBranch]);
     }
 
-    public gitCheckoutRemote(branchName: string) {
+    public fetch() {
+        return this.runGit(["fetch"]);
+    }
+
+    public branchExistsLocally(branchName: string): boolean {
+        return !this.runGit([""]).startsWith("fatal");
+    }
+
+    public checkout(branchName: string) {
         let safeBranchName = branchName.replace(" ", "").replace("&","").replace(";","");
-        return this.runGit(["checkout", "--track", "origin/" + safeBranchName]);
+        return this.runGit(["checkout", this.branchExistsLocally(branchName) ? "" : "-b", safeBranchName]);
     }
 
-    public writeAndCommit(filepath: string, data: string, commitMsg: string) {
+    public writeAndCommit(branchName: string, filepath: string, data: string, commitMsg: string) {
         let outputPath = path.join(this.repoPath, filepath);
         let output = "";
         console.log("Writing to path ", outputPath);
         fs.writeFileSync(outputPath, data);
+        output += this.fetch();
+        output += this.checkout(branchName);
         output += this.add(".");
         output += this.commit(commitMsg); 
         return output;
